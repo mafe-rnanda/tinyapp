@@ -10,9 +10,9 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-    <% if(username) { %>
+    <% if(user) { %>
       <div style="display:flex;">
-        <h6 style="padding-right:20px; padding-top:10px;">Logged In As: <%= username %></h6>
+        <h6 style="padding-right:20px; padding-top:10px;">Logged In As: <%= user %></h6>
         <form action="/logout" method="POST">
           <button type="submit" class="btn btn-outline-dark">Logout</button>
         </form>

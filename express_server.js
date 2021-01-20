@@ -47,14 +47,15 @@ app.get("/hello", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = { 
     urls: urlDatabase,
-    username: req.cookies["username"]
+    user: req.cookies["user_id"]
   };
+  console.log(typeof templateVars.user)
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", function (req, res) {
   const templateVars = { 
-    username: req.cookies["username"]
+    user: req.cookies["user_id"]
   };
   res.render("urls_new", templateVars);
 });
@@ -70,7 +71,7 @@ app.get("/urls/:shortURL", function (req, res) {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies["username"]
+    user: req.cookies["user_id"]
   };
   console.log(templateVars)
   res.render("urls_show", templateVars);
@@ -94,23 +95,26 @@ app.post("/urls/:shortURL", (req, res) => {
 
 app.post("/login", (req, res) => {
   let username = req.body.username;
-  res.cookie("username", username);
+  res.cookie("user_id", username);
   res.redirect("/urls");
 })
 
 app.post("/logout", (req, res) => {
   let username = req.body.username;
-  res.clearCookie("username", username);
+  res.clearCookie("user_id", username);
   res.redirect("/urls");
 })
 
+// Register with email and password
+// Page that shows the form to input information
 app.get("/register", function (req, res) {
   const templateVars = { 
-    username: req.cookies["username"]
+    user: req.cookies["user_id"]
   };
   res.render("registration", templateVars);
 });
 
+// Register button action > new cookie created, info stored in obj "users"
 app.post("/register", function (req, res) {
   let userID = generateRandomString();
   users[userID] = {
@@ -119,10 +123,11 @@ app.post("/register", function (req, res) {
     password: req.body.password
   }
   console.log(users);
-  res.cookie("user_id", userID)
+  res.cookie("user_id", users[userID].email)
   res.redirect("/urls");
 });
 
+// Connection established
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
