@@ -32,14 +32,12 @@ const users = {
   }
 }
 
-function getUserByEmail(userObj, email) {
-  let match;
-  for (const key in userObj) {
-      if (email === userObj[key].email) {
-        match = userObj[key]
-      } 
+function getUserByEmail(email) {
+  for (const key in users) {
+    if (email === users[key].email) {
+      return users[key]
+    }
   }
-  return match
 }
 
 app.get("/", (req, res) => {
@@ -103,20 +101,42 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect("/urls");
 })
 
-app.post("/login", (req, res) => {
-  let username = req.body.username;
-  res.cookie("user_id", username);
-  res.redirect("/urls");
-})
+////////// login existing user //////////
+// Page that shows the login form
+app.get("/login", function (req, res) {
+  const templateVars = { 
+    user: req.cookies["user_id"]
+  };
+  res.render("login", templateVars);
+});
 
+// Login button action
+app.post("/login", function (req, res) {
+  let email = req.body.email
+  let password = req.body.password
+  // Identify if user already exist or if fields are incorrect
+  if (email === "" || password === "") {
+    res.sendStatus(404)
+  } else if (!getUserByEmail(email)) {
+    res.sendStatus(404)
+  } else if (getUserByEmail(email).password !== password) {
+    res.sendStatus(403)
+  } else {
+    let id = getUserByEmail(email).id
+    res.cookie("user_id", users[id].email)
+    res.redirect("/urls");
+  }
+});
+
+////////// logout //////////
 app.post("/logout", (req, res) => {
   let username = req.body.username;
   res.clearCookie("user_id", username);
   res.redirect("/urls");
 })
 
-// Register with email and password
-// Page that shows the form to input information
+////////// Register new user //////////
+// Page that shows the registration form
 app.get("/register", function (req, res) {
   const templateVars = { 
     user: req.cookies["user_id"]
@@ -126,28 +146,26 @@ app.get("/register", function (req, res) {
 
 // Register button action > new cookie created, info stored in obj "users"
 app.post("/register", function (req, res) {
-  let userID = generateRandomString();
-  users[userID] = {
-    id: userID,
-    email: req.body.email,
-    password: req.body.password
-  }
-  console.log(users);
-  // 404 Error
-  // 404
-  if (req.body.email === "" || req.body.password === "") {
-    // res.send("<html><body>Please make sure you enter a correct email address and password!</body></html>\n")
+  let id = generateRandomString();
+  let email = req.body.email
+  let password = req.body.password
+    // 404 Error if empty email or password field, or if email matches users obj
+  if (email === "" || password === "") {
     res.sendStatus(404)
-  } else if (req.body.email === getUserByEmail(users, req.body.email).email) { 
+  } else if (getUserByEmail(email)) {
     res.sendStatus(404)
   } else {
-    res.cookie("user_id", users[userID].email)
+    users[id] = {
+      id: id,
+      email: email,
+      password: password
+    }
+    res.cookie("user_id", users[id].email)
     res.redirect("/urls");
   }
-    
 });
 
-// Connection established
+////////// Connection established //////////
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
