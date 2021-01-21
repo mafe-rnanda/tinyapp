@@ -18,12 +18,10 @@
         </form>
       </div>
     <% } else { %>  
-      <form action="/login" method="POST">
-        <a class="btn btn-outline-dark" href="/login" role="button">Login</a>
-        <a class="btn btn-outline-dark" href="/register" role="button">Register</a>
-        
-        <!-- <button type="submit" class="btn btn-outline-dark">Login</button> -->
-      </form>
+        <div class="navbar-nav">
+          <a class="nav-item nav-link" href="/login">Login</a>
+          <a class="nav-item nav-link" href="/register">Register</a>
+        </div>
     <% } %>
   </nav>
 </header>

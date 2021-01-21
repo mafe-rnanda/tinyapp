@@ -14,11 +14,21 @@
   <body>
     <main style="margin: 1em;">
       <h3>Login</h3>
-      <form class="form-inline" action="/login" method="POST">
-        <div class="form-group mb-2">
-          <input type="email" name="email" placeholder="email" style="width: 300px; margin: 1em">
-          <input type="password" name="password" placeholder="password" style="width: 300px; margin: 1em">
-          <button type="submit" class="btn btn-primary">Login</button>
+      <form action="/login" method="POST">
+        <div>
+          <label> Email Address </label>
+        </div>
+        <div>
+          <input type="email" name="email" placeholder="Email Address" style="width: 200px; margin-bottom:10px;">
+        </div>
+        <div>
+          <label> Password </label>
+        </div>
+        <div>
+          <input type="password" name="password" placeholder="Password" style="width: 200px; margin-bottom:10px;">
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary" style="margin-top: 15px">Login</button>
         </div>
       </form>
     </main>
