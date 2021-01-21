@@ -32,6 +32,16 @@ const users = {
   }
 }
 
+function getUserByEmail(userObj, email) {
+  let match;
+  for (const key in userObj) {
+      if (email === userObj[key].email) {
+        match = userObj[key]
+      } 
+  }
+  return match
+}
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -123,8 +133,18 @@ app.post("/register", function (req, res) {
     password: req.body.password
   }
   console.log(users);
-  res.cookie("user_id", users[userID].email)
-  res.redirect("/urls");
+  // 404 Error
+  // 404
+  if (req.body.email === "" || req.body.password === "") {
+    // res.send("<html><body>Please make sure you enter a correct email address and password!</body></html>\n")
+    res.sendStatus(404)
+  } else if (req.body.email === getUserByEmail(users, req.body.email).email) { 
+    res.sendStatus(404)
+  } else {
+    res.cookie("user_id", users[userID].email)
+    res.redirect("/urls");
+  }
+    
 });
 
 // Connection established
