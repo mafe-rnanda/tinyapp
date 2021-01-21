@@ -75,10 +75,10 @@ app.get("/urls/new", function (req, res) {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
+  //console.log(req.body);  // Log the POST request body to the console
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.cookies["user_id"] }
-  // console.log(urlDatabase);
+  console.log(urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -88,7 +88,7 @@ app.get("/urls/:shortURL", function (req, res) {
     longURL: urlDatabase[req.params.shortURL].longURL,
     user: req.cookies["user_id"]
   };
-  console.log(templateVars);
+  //console.log(templateVars);
   res.render("urls_show", templateVars);
 });
 
