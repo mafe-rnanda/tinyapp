@@ -57,7 +57,6 @@ app.get("/urls", (req, res) => {
     urls: urlDatabase,
     user: req.cookies["user_id"]
   };
-  console.log(typeof templateVars.user)
   res.render("urls_index", templateVars);
 });
 
@@ -81,7 +80,6 @@ app.get("/urls/:shortURL", function (req, res) {
     longURL: urlDatabase[req.params.shortURL],
     user: req.cookies["user_id"]
   };
-  console.log(templateVars)
   res.render("urls_show", templateVars);
 });
 
@@ -97,7 +95,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:shortURL", (req, res) => {
   urlDatabase[req.params.shortURL] = req.body.longURL;
-  //console.log(urlDatabase)
   res.redirect("/urls");
 })
 
@@ -118,7 +115,7 @@ app.post("/login", function (req, res) {
   if (email === "" || password === "") {
     res.sendStatus(404)
   } else if (!getUserByEmail(email)) {
-    res.sendStatus(404)
+    res.sendStatus(403)
   } else if (getUserByEmail(email).password !== password) {
     res.sendStatus(403)
   } else {
@@ -130,8 +127,7 @@ app.post("/login", function (req, res) {
 
 ////////// logout //////////
 app.post("/logout", (req, res) => {
-  let username = req.body.username;
-  res.clearCookie("user_id", username);
+  res.clearCookie("user_id");
   res.redirect("/urls");
 })
 
