@@ -1,3 +1,4 @@
+const { getUserByEmail, generateRandomString, urlsForUser, hashedP } = require("./helpers");
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -39,38 +40,6 @@ const users = {
   },
 };
 
-// Gives out a random id for users and shortURLS
-function generateRandomString() {
-  return Math.random().toString(20).substr(2, 6);
-}
-
-// Renders the user information that matches the email input
-function getUserByEmail(email) {
-  for (const key in users) {
-    if (email === users[key].email) {
-      return users[key];
-    }
-  }
-}
-
-// Returns the URLs where the userID is equal to the id of the currently logged-in user
-function urlsForUser(id) {
-  let newDatabase = {};
-  for (let u in urlDatabase) {
-    if (id === urlDatabase[u].userID) {
-      newDatabase[u] = urlDatabase[u];
-    }
-  }
-  return newDatabase;
-}
-
-//Bcrypt for passwords
-function hashedP(password) {
-  const salt = bcrypt.genSaltSync(10);
-  const hashedPassword = bcrypt.hashSync(password, salt);
-  return hashedPassword;
-}
-
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -88,7 +57,7 @@ app.get("/urls", (req, res) => {
     res.redirect("/login");
   } else if (users[req.session.user_id]) {
     const templateVars = {
-      urls: urlsForUser(req.session.user_id),
+      urls: urlsForUser(req.session.user_id, urlDatabase),
       user: users[req.session.user_id],
     };
     console.log(templateVars)
@@ -122,7 +91,7 @@ app.get("/urls/:shortURL", function (req, res) {
   let userid = req.session.user_id;
   if (!req.session.user_id) {
     res.send("<html><body>Not logged in</body></html>\n");
-  } else if (Object.keys(urlsForUser(userid)).includes(req.params.shortURL)) {
+  } else if (Object.keys(urlsForUser(userid, urlDatabase)).includes(req.params.shortURL)) {
     const templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL,
@@ -142,7 +111,7 @@ app.get("/u/:shortURL", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (!req.session.user_id) {
     res.send("<html><body>Please login</body></html>\n");
-  } else if (Object.keys(urlsForUser(req.session.user_id)).includes(req.params.shortURL)) {
+  } else if (Object.keys(urlsForUser(req.session.user_id, urlDatabase)).includes(req.params.shortURL)) {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
   } else {
@@ -153,7 +122,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   if (!req.session.user_id) {
     res.send("<html><body>Please login</body></html>\n");
-  } else if (Object.keys(urlsForUser(req.session.user_id)).includes(req.params.shortURL)) {
+  } else if (Object.keys(urlsForUser(req.session.user_id, urlDatabase)).includes(req.params.shortURL)) {
     urlDatabase[req.params.shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
   } else {
@@ -177,13 +146,13 @@ app.post("/login", function (req, res) {
   // Identify if user already exist or if fields are incorrect
   if (email === "" || password === "") {
     res.sendStatus(404);
-  } else if (!getUserByEmail(email)) {
+  } else if (!getUserByEmail(email, users)) {
     res.sendStatus(403);
-  } else if (!bcrypt.compareSync(password, getUserByEmail(email).password)) {
-    console.log('password: ', getUserByEmail(email).password)
+  } else if (!bcrypt.compareSync(password, getUserByEmail(email, users).password)) {
+    console.log('password: ', getUserByEmail(email, users).password)
     res.sendStatus(403);
   } else {
-    let id = getUserByEmail(email).id;
+    let id = getUserByEmail(email, users).id;
     //res.cookie("user_id", id);
     req.session.user_id = id
     res.redirect("/urls");
@@ -214,7 +183,7 @@ app.post("/register", function (req, res) {
   // 404 Error if empty email or password field, or if email matches users obj
   if (email === "" || password === "") {
     res.sendStatus(404);
-  } else if (getUserByEmail(email)) {
+  } else if (getUserByEmail(email, users)) {
     res.sendStatus(404);
   } else {
     users[id] = {
