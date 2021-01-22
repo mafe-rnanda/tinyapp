@@ -3,11 +3,14 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+// var cookieSession = require('cookie-session')
+const bcrypt = require('bcrypt');
 
 app.set("view engine", "ejs");
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+
 
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID" },
@@ -58,6 +61,13 @@ function urlsForUser(id) {
     }
   }
   return newDatabase;
+}
+
+//Bcrypt for passwords
+function hashedP(password) {
+  const salt = bcrypt.genSaltSync(10);
+  const hashedPassword = bcrypt.hashSync(password, salt);
+  return hashedPassword;
 }
 
 app.get("/", (req, res) => {
@@ -170,7 +180,8 @@ app.post("/login", function (req, res) {
     res.sendStatus(404);
   } else if (!getUserByEmail(email)) {
     res.sendStatus(403);
-  } else if (getUserByEmail(email).password !== password) {
+  } else if (!bcrypt.compareSync(password, getUserByEmail(email).password)) {
+    console.log('password: ', getUserByEmail(email).password)
     res.sendStatus(403);
   } else {
     let id = getUserByEmail(email).id;
@@ -208,8 +219,9 @@ app.post("/register", function (req, res) {
     users[id] = {
       id: id,
       email: email,
-      password: password,
+      password: hashedP(password),
     };
+    console.log(users[id])
     res.cookie("user_id", users[id].email);
     res.redirect("/urls");
   }
