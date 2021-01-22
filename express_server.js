@@ -3,13 +3,17 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-// var cookieSession = require('cookie-session')
+var cookieSession = require('cookie-session')
 const bcrypt = require('bcrypt');
 
 app.set("view engine", "ejs");
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1']
+}))
 
 
 const urlDatabase = {
@@ -87,13 +91,13 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let cookieId = req.cookies["user_id"]
-  if (!req.cookies["user_id"]) {
+  let cookieId = req.session.user_id
+  if (!req.session.user_id) {
     res.redirect("/login");
   } else if (users[cookieId]) {
     const templateVars = {
-      urls: urlsForUser(req.cookies["user_id"]),
-      user: usersObj(users, req.cookies["user_id"]),
+      urls: urlsForUser(req.session.user_id),
+      user: usersObj(users, req.session.user_id),
     };
     console.log(templateVars)
     res.render("urls_index", templateVars);
@@ -101,9 +105,9 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", function (req, res) {
-  if (req.cookies["user_id"]) {
+  if (req.session.user_id) {
     const templateVars = {
-      user: usersObj(users, req.cookies["user_id"]),
+      user: usersObj(users, req.session.user_id),
     };
     res.render("urls_new", templateVars);
   } else {
@@ -116,21 +120,21 @@ app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = {
     longURL: req.body.longURL,
-    userID: req.cookies["user_id"],
+    userID: req.session.user_id,
   };
   // console.log(urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/urls/:shortURL", function (req, res) {
-  let userid = req.cookies["user_id"];
-  if (!req.cookies["user_id"]) {
+  let userid = req.session.user_id;
+  if (!req.session.user_id) {
     res.send("<html><body>Not logged in</body></html>\n");
   } else if (Object.keys(urlsForUser(userid)).includes(req.params.shortURL)) {
     const templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL,
-      user: usersObj(users, req.cookies["user_id"])
+      user: usersObj(users, req.session.user_id)
     };
     res.render("urls_show", templateVars);
   } else {
@@ -144,9 +148,9 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {
     res.send("<html><body>Please login</body></html>\n");
-  } else if (Object.keys(urlsForUser(req.cookies["user_id"])).includes(req.params.shortURL)) {
+  } else if (Object.keys(urlsForUser(req.session.user_id)).includes(req.params.shortURL)) {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
   } else {
@@ -155,9 +159,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {
     res.send("<html><body>Please login</body></html>\n");
-  } else if (Object.keys(urlsForUser(req.cookies["user_id"])).includes(req.params.shortURL)) {
+  } else if (Object.keys(urlsForUser(req.session.user_id)).includes(req.params.shortURL)) {
     urlDatabase[req.params.shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
   } else {
@@ -169,7 +173,7 @@ app.post("/urls/:shortURL", (req, res) => {
 // Page that shows the login form
 app.get("/login", function (req, res) {
   const templateVars = {
-    user: usersObj(users, req.cookies["user_id"]),
+    user: usersObj(users, req.session.user_id),
   };
   res.render("login", templateVars);
 });
@@ -188,14 +192,16 @@ app.post("/login", function (req, res) {
     res.sendStatus(403);
   } else {
     let id = getUserByEmail(email).id;
-    res.cookie("user_id", id);
+    //res.cookie("user_id", id);
+    req.session.user_id = id
     res.redirect("/urls");
   }
 });
 
 ////////// logout //////////
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  //res.clearCookie("user_id");
+  req.session = null
   res.redirect("/urls");
 });
 
@@ -203,7 +209,7 @@ app.post("/logout", (req, res) => {
 // Page that shows the registration form
 app.get("/register", function (req, res) {
   const templateVars = {
-    user: usersObj(users, req.cookies["user_id"])
+    user: usersObj(users, req.session.user_id)
   };
   res.render("registration", templateVars);
 });
@@ -225,7 +231,8 @@ app.post("/register", function (req, res) {
       password: hashedP(password),
     };
     console.log(users[id])
-    res.cookie("user_id", id);
+    //res.cookie("user_id", id);
+    req.session.user_id = id
     res.redirect("/urls");
   }
 });
