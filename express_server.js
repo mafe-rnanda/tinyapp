@@ -38,6 +38,10 @@ const users = {
 };
 
 ////////// Helper functions /////////
+function usersObj(users, id) {
+  return users[id]
+}
+
 // Gives out a random id for users and shortURLS
 function generateRandomString() {
   return Math.random().toString(20).substr(2, 6);
@@ -83,16 +87,15 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  let cookieId = req.cookies["user_id"]
   if (!req.cookies["user_id"]) {
     res.redirect("/login");
-  } else if (
-    req.cookies["user_id"] === getUserByEmail(req.cookies["user_id"]).email
-  ) {
+  } else if (users[cookieId]) {
     const templateVars = {
-      urls: urlsForUser(getUserByEmail(req.cookies["user_id"]).id),
-      user: req.cookies["user_id"],
+      urls: urlsForUser(req.cookies["user_id"]),
+      user: usersObj(users, req.cookies["user_id"]),
     };
-    // console.log(templateVars)
+    console.log(templateVars)
     res.render("urls_index", templateVars);
   }
 });
@@ -100,7 +103,7 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", function (req, res) {
   if (req.cookies["user_id"]) {
     const templateVars = {
-      user: req.cookies["user_id"],
+      user: usersObj(users, req.cookies["user_id"]),
     };
     res.render("urls_new", templateVars);
   } else {
@@ -120,14 +123,14 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/:shortURL", function (req, res) {
-  let userid = getUserByEmail(req.cookies["user_id"]).id;
+  let userid = req.cookies["user_id"];
   if (!req.cookies["user_id"]) {
     res.send("<html><body>Not logged in</body></html>\n");
   } else if (Object.keys(urlsForUser(userid)).includes(req.params.shortURL)) {
     const templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL,
-      user: req.cookies["user_id"],
+      user: usersObj(users, req.cookies["user_id"])
     };
     res.render("urls_show", templateVars);
   } else {
@@ -143,7 +146,7 @@ app.get("/u/:shortURL", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (!req.cookies["user_id"]) {
     res.send("<html><body>Please login</body></html>\n");
-  } else if (Object.keys(urlsForUser(getUserByEmail(req.cookies["user_id"]).id)).includes(req.params.shortURL)) {
+  } else if (Object.keys(urlsForUser(req.cookies["user_id"])).includes(req.params.shortURL)) {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
   } else {
@@ -154,7 +157,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   if (!req.cookies["user_id"]) {
     res.send("<html><body>Please login</body></html>\n");
-  } else if (Object.keys(urlsForUser(getUserByEmail(req.cookies["user_id"]).id)).includes(req.params.shortURL)) {
+  } else if (Object.keys(urlsForUser(req.cookies["user_id"])).includes(req.params.shortURL)) {
     urlDatabase[req.params.shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
   } else {
@@ -166,7 +169,7 @@ app.post("/urls/:shortURL", (req, res) => {
 // Page that shows the login form
 app.get("/login", function (req, res) {
   const templateVars = {
-    user: req.cookies["user_id"],
+    user: usersObj(users, req.cookies["user_id"]),
   };
   res.render("login", templateVars);
 });
@@ -185,7 +188,7 @@ app.post("/login", function (req, res) {
     res.sendStatus(403);
   } else {
     let id = getUserByEmail(email).id;
-    res.cookie("user_id", users[id].email);
+    res.cookie("user_id", id);
     res.redirect("/urls");
   }
 });
@@ -200,7 +203,7 @@ app.post("/logout", (req, res) => {
 // Page that shows the registration form
 app.get("/register", function (req, res) {
   const templateVars = {
-    user: req.cookies["user_id"],
+    user: usersObj(users, req.cookies["user_id"])
   };
   res.render("registration", templateVars);
 });
@@ -222,7 +225,7 @@ app.post("/register", function (req, res) {
       password: hashedP(password),
     };
     console.log(users[id])
-    res.cookie("user_id", users[id].email);
+    res.cookie("user_id", id);
     res.redirect("/urls");
   }
 });
