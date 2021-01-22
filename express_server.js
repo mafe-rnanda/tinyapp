@@ -93,7 +93,7 @@ app.post("/urls", (req, res) => {
 app.get("/urls/:shortURL", function (req, res) {
   let userid = req.session.user_id;
   if (!req.session.user_id) {
-    res.status(404).send("You are not logged in. Please go back.");
+    res.status(404).send("Please login to access this page.");
   } else if (Object.keys(urlsForUser(userid, urlDatabase)).includes(req.params.shortURL)) {
     const templateVars = {
       shortURL: req.params.shortURL,
@@ -115,7 +115,7 @@ app.get("/u/:shortURL", (req, res) => {
 ////////// delete button //////////
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (!req.session.user_id) {
-    res.send("<html><body>Please login</body></html>\n");
+    res.status(404).send("Please login to access this page.");
   } else if (Object.keys(urlsForUser(req.session.user_id, urlDatabase)).includes(req.params.shortURL)) {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
@@ -127,7 +127,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 ////////// edit URL button //////////
 app.post("/urls/:shortURL", (req, res) => {
   if (!req.session.user_id) {
-    res.send("<html><body>Please login</body></html>\n");
+    res.status(404).send("Please login to access this page.");
   } else if (Object.keys(urlsForUser(req.session.user_id, urlDatabase)).includes(req.params.shortURL)) {
     urlDatabase[req.params.shortURL].longURL = req.body.longURL;
     res.redirect("/urls");
