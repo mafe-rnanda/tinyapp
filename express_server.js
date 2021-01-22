@@ -2,14 +2,12 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
 var cookieSession = require('cookie-session')
 const bcrypt = require('bcrypt');
 
 app.set("view engine", "ejs");
 
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
 app.use(cookieSession({
   name: 'session',
   keys: ['key1']
@@ -40,11 +38,6 @@ const users = {
     password: "hello",
   },
 };
-
-////////// Helper functions /////////
-function usersObj(users, id) {
-  return users[id]
-}
 
 // Gives out a random id for users and shortURLS
 function generateRandomString() {
@@ -91,13 +84,12 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let cookieId = req.session.user_id
   if (!req.session.user_id) {
     res.redirect("/login");
-  } else if (users[cookieId]) {
+  } else if (users[req.session.user_id]) {
     const templateVars = {
       urls: urlsForUser(req.session.user_id),
-      user: usersObj(users, req.session.user_id),
+      user: users[req.session.user_id],
     };
     console.log(templateVars)
     res.render("urls_index", templateVars);
@@ -107,7 +99,7 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", function (req, res) {
   if (req.session.user_id) {
     const templateVars = {
-      user: usersObj(users, req.session.user_id),
+      user: users[req.session.user_id],
     };
     res.render("urls_new", templateVars);
   } else {
@@ -134,7 +126,7 @@ app.get("/urls/:shortURL", function (req, res) {
     const templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL,
-      user: usersObj(users, req.session.user_id)
+      user: users[req.session.user_id]
     };
     res.render("urls_show", templateVars);
   } else {
@@ -173,7 +165,7 @@ app.post("/urls/:shortURL", (req, res) => {
 // Page that shows the login form
 app.get("/login", function (req, res) {
   const templateVars = {
-    user: usersObj(users, req.session.user_id),
+    user: users[req.session.user_id],
   };
   res.render("login", templateVars);
 });
@@ -209,7 +201,7 @@ app.post("/logout", (req, res) => {
 // Page that shows the registration form
 app.get("/register", function (req, res) {
   const templateVars = {
-    user: usersObj(users, req.session.user_id)
+    user: users[req.session.user_id]
   };
   res.render("registration", templateVars);
 });
