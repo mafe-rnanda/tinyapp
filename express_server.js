@@ -62,7 +62,6 @@ app.get("/urls", (req, res) => {
       urls: urlsForUser(req.session.user_id, urlDatabase),
       user: users[req.session.user_id],
     };
-    console.log(templateVars);
     res.render("urls_index", templateVars);
   }
 });
@@ -151,14 +150,13 @@ app.post("/login", function (req, res) {
   let password = req.body.password;
   // Identify if user already exist or if fields are incorrect
   if (email === "" || password === "") {
-    res.sendStatus(404);
+    return res.status(404).send("Please enter a correct username and password");
   } else if (!getUserByEmail(email, users)) {
-    res.sendStatus(403);
+    return res.status(403).send("User not found");
   } else if (
     !bcrypt.compareSync(password, getUserByEmail(email, users).password)
   ) {
-    console.log("password: ", getUserByEmail(email, users).password);
-    res.sendStatus(403);
+    return res.status(403);send("User not found");
   } else {
     let id = getUserByEmail(email, users).id;
     req.session.user_id = id;
@@ -186,16 +184,15 @@ app.post("/register", function (req, res) {
   let email = req.body.email;
   let password = req.body.password;
   if (email === "" || password === "") {
-    res.sendStatus(404);
+    return res.status(404).send("Please enter a correct username and password");
   } else if (getUserByEmail(email, users)) {
-    res.sendStatus(404);
+    return res.status(404).send("User already registered")
   } else {
     users[id] = {
       id: id,
       email: email,
       password: hashedP(password),
     };
-    console.log(users[id]);
     req.session.user_id = id;
     res.redirect("/urls");
   }
