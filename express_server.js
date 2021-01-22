@@ -1,7 +1,3 @@
-function generateRandomString() {
-  return Math.random().toString(20).substr(2, 6);
-}
-
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -15,8 +11,8 @@ app.use(cookieParser());
 
 
 const urlDatabase = {
-  // "b2xVn2": "http://www.lighthouselabs.ca",
-  // "9sm5xK": "http://www.google.com",
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID" },
+  "9sm5xK": { longURL: "http://www.google.com", userID: "userRandomID" },
   "b6UTxQ": { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
   "i3BoGr": { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
@@ -31,10 +27,21 @@ const users = {
     id: "user2RandomID", 
     email: "user2@example.com", 
     password: "dishwasher-funk"
+  },
+  "aJ48lW": {
+    id: "aJ48lW", 
+    email: "user3@example.com", 
+    password: "hello"
   }
 }
 
-// Helper function to render the user information that matches the email input
+////////// Helper functions /////////
+// Gives out a random id for users and shortURLS
+function generateRandomString() {
+  return Math.random().toString(20).substr(2, 6);
+}
+
+// Renders the user information that matches the email input
 function getUserByEmail(email) {
   for (const key in users) {
     if (email === users[key].email) {
@@ -42,6 +49,18 @@ function getUserByEmail(email) {
     }
   }
 }
+
+// Returns the URLs where the userID is equal to the id of the currently logged-in user
+function urlsForUser(id) {
+  let newDatabase = {}
+  for (let u in urlDatabase) {
+    if (id === urlDatabase[u].userID) {
+      newDatabase[u] = urlDatabase[u]
+    }    
+  }
+  return newDatabase
+}
+
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -56,11 +75,16 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { 
-    urls: urlDatabase,
-    user: req.cookies["user_id"]
-  };
-  res.render("urls_index", templateVars);
+  if (!req.cookies["user_id"]) {
+    res.redirect("/login")
+  } else if (req.cookies["user_id"] === getUserByEmail(req.cookies["user_id"]).email) {
+    const templateVars = { 
+      urls: urlsForUser(getUserByEmail(req.cookies["user_id"]).id),
+      user: req.cookies["user_id"]
+    };
+    // console.log(templateVars)
+    res.render("urls_index", templateVars);
+  } 
 });
 
 app.get("/urls/new", function (req, res) {
@@ -78,18 +102,25 @@ app.post("/urls", (req, res) => {
   //console.log(req.body);  // Log the POST request body to the console
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.cookies["user_id"] }
-  console.log(urlDatabase);
+  // console.log(urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/urls/:shortURL", function (req, res) {
-  const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    user: req.cookies["user_id"]
-  };
-  //console.log(templateVars);
-  res.render("urls_show", templateVars);
+  let userid = getUserByEmail(req.cookies["user_id"]).id
+  if (!req.cookies["user_id"]) {
+    res.send("<html><body>Not logged in</body></html>\n");
+  } else if (Object.keys(urlsForUser(userid)).includes(req.params.shortURL)) {
+    const templateVars = { 
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL].longURL,
+      user: req.cookies["user_id"]
+    };
+    res.render("urls_show", templateVars);
+  } else {
+    res.status(404).send("Authorization denied")
+  }
+
 });
 
 app.get("/u/:shortURL", (req, res) => {
