@@ -63,6 +63,8 @@ app.get("/urls", (req, res) => {
       user: users[req.session.user_id],
     };
     res.render("urls_index", templateVars);
+  } else {
+    res.redirect("/login");
   }
 });
 
